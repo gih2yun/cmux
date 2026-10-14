@@ -202,6 +202,8 @@ export class BridgePageClient implements PageClient {
 
   /** Sends an envelope, or holds it while the document is parked. */
   private transmit(envelope: Envelope & { id: number }): Promise<unknown> {
+    const op = (envelope as { op?: string }).op ?? envelope.t;
+    document.documentElement.dataset.diagPost = `${op} parked=${this.parked} held=${this.held.length}`;
     if (!this.parked) return this.handler.postMessage(envelope);
     return new Promise((resolve, reject) => this.held.push({ envelope, resolve, reject }));
   }

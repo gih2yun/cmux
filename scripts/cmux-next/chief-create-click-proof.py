@@ -397,7 +397,11 @@ try:
     # A real click into the Name field first (the window gets real input before the gesture click, as in v3).
     R["name_click"] = real_click_link(app.pid, name, name, role="textfield")
     until(lambda: None, 1)  # proof pacing: the first click's activation settles before the gesture click
+    R["data_before_click"] = page_state().get("data")
     R["create_click"] = real_click_link(app.pid, "Create Chief", "Create Chief", role="button")
+    until(lambda: None, 2)  # diag pacing
+    R["data_after_click"] = page_state().get("data")
+    say("DATA before", json.dumps(R["data_before_click"])); say("DATA after", json.dumps(R["data_after_click"]))
     # What the host holds right after the click: the page's calls still running (id, op, age).
     R["in_flight_after_click"] = [(lambda s: {"t": round(time.time(), 3), "in_flight": s.get("in_flight"), "hash": s.get("hash")})(page_state())
                                   for _ in range(1) ]

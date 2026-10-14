@@ -77,6 +77,7 @@ export function ChiefSheet({ sheets, strings, chief, picture, grants }: ChiefShe
     setImage({ ...read, url: `data:${read.mediaType};base64,${read.data}` });
   };
   const submit = () => {
+    document.documentElement.dataset.diagSubmit = `ready=${ready} busy=${busy} grants=${grants} name=${profile.name.length}`;
     if (!ready) return;
     setBusy(true);
     const changed = grants && grantChanged ? grantChange : undefined;

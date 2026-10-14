@@ -255,8 +255,11 @@ export class HomeSheets {
     grant: HomeChiefGrantChange | undefined,
     picture: { mediaType: string; data: string } | undefined,
   ): Promise<HomeChief | undefined> {
+    const diag = (step: string) => (document.documentElement.dataset.diagCreate = step);
+    diag(`enter client=${!!this.client} host=${!!this.host} grants=${this.snapshot.chiefGrants}`);
     if (!this.client || !this.host || !this.snapshot.chiefGrants) return undefined;
     try {
+      diag("host-call");
       const made = await this.host.call<{ value: Record<string, unknown> }>("cmux.chief.profile.create", {
         ...SELECTORS,
         display_name: profile.name.trim(),
@@ -266,6 +269,7 @@ export class HomeSheets {
         ...(grant ? grantFields(grant) : {}),
         idempotency_key: this.key("chief"),
       });
+      diag("host-done");
       const chief = chiefRecord(made.value);
       if (picture)
         await this.client.call(HomeOps.chiefAvatarSet, {
@@ -273,16 +277,21 @@ export class HomeSheets {
           ...picture,
           idempotencyKey: this.key("picture"),
         });
+      diag("load-chiefs");
       await this.loadChiefs();
+      diag("start-dm");
       const { conversation } = await this.client.call<{ conversation: string }>(HomeOps.startConversation, {
         participants: [chief.id],
         title: "",
         idempotencyKey: this.key("dm"),
       });
+      diag("open");
       this.close();
       await this.page.open(conversation);
+      diag("done");
       return chief;
     } catch (error) {
+      diag(`error ${String(error)}`.slice(0, 300));
       this.page.fail(describe(error));
       return undefined;
     }

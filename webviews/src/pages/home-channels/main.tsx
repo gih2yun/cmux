@@ -115,6 +115,12 @@ function servedByDaemon(): string | null {
   return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/`;
 }
 
+window.addEventListener("error", (event) => {
+  document.documentElement.dataset.diagError = String(event.message).slice(0, 300);
+});
+window.addEventListener("unhandledrejection", (event) => {
+  document.documentElement.dataset.diagRejection = String(event.reason).slice(0, 300);
+});
 const root = document.getElementById("root");
 if (root && document.documentElement.dataset.cmuxPage === "home-channels") {
   const query = new URLSearchParams(location.search);
