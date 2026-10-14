@@ -5,6 +5,9 @@ extension CmuxConfigSnapshot {
     /// `labs.previewFeatures`: Surfaces still being shaped (the agent pane's session coverage label and its Pull requests view). Off by default, so a default app shows only finished surfaces.
     public nonisolated static let previewFeaturesPath = ["labs", "previewFeatures"]
     public nonisolated static let previewFeaturesDefault = false
+    /// `labs.reasoningSlider`: The agent composer's reasoning menu picks the level with a stepped slider instead of the Low to Max list. Off by default; the list stays the default (Leo 2026-10-14). Moves to a Labs flag once hq#1980's registry lands.
+    public nonisolated static let reasoningSliderPath = ["labs", "reasoningSlider"]
+    public nonisolated static let reasoningSliderDefault = false
 }
 
 /// One group of `SettingsSchema` rows (its own type: the schema type's line budget is per type).
@@ -22,6 +25,16 @@ nonisolated enum LabsSettingsSchema {
                 kind: .toggle,
                 default: .bool(CmuxConfigSnapshot.previewFeaturesDefault),
                 keywords: ["labs", "preview", "experimental", "beta", "prototype"]
+            ),
+            SettingDescriptor(
+                CmuxConfigSnapshot.reasoningSliderPath,
+                section: .advanced,
+                group: group,
+                title: SettingsText.keyed("settings.labs.reasoningSlider", "Reasoning Slider"),
+                help: SettingsText.keyed("settings.labs.reasoningSlider.help", "Pick the agent's reasoning level with a slider instead of a list."),
+                kind: .toggle,
+                default: .bool(CmuxConfigSnapshot.reasoningSliderDefault),
+                keywords: ["labs", "reasoning", "effort", "thinking", "slider", "composer", "agent"]
             ),
         ]
     }

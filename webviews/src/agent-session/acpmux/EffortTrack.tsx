@@ -2,15 +2,21 @@ import React, { useEffect, useRef } from "react";
 import type { Choice } from "./ComposerPickers";
 import { useT } from "./i18n";
 
+/// The keys a range input steps itself with.
+const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
+
 /// The effort's stepped slider: a native range input (arrow keys, Home and End step it), drawn
 /// as a track with one stop per level the agent offers (a click on the track jumps to the
 /// nearest stop), over its ends (Faster, Smarter) and the level the model recommends. The model
-/// picker's reasoning panel draws it.
+/// picker's reasoning panel draws it, and so does the reasoning menu with `labs.reasoningSlider`
+/// (EffortPicker.tsx), whose menu would otherwise take the arrow keys (`inMenu`).
 export function EffortTrack({
   efforts,
   current,
   onPick,
   onEscape,
+  onDone,
+  inMenu = false,
   autoFocus = false,
 }: {
   efforts: Choice[];
@@ -18,6 +24,11 @@ export function EffortTrack({
   onPick(value: string): void;
   /// Escape on the slider hands focus back (the popover closes, a menu steps back).
   onEscape?(): void;
+  /// Return on the slider: the level is already picked, so its menu closes.
+  onDone?(): void;
+  /// The slider sits in a menu: its keys (arrows, Home, End, Page Up and Down) step it rather than
+  /// move the menu's highlight.
+  inMenu?: boolean;
   autoFocus?: boolean;
 }) {
   const t = useT();
@@ -63,6 +74,15 @@ export function EffortTrack({
           aria-valuetext={efforts[level]?.recommended ? t("effort.valueRecommended", { level: name }) : name}
           onChange={(event) => pick(Number(event.target.value))}
           onKeyDown={(event) => {
+            if (inMenu && SLIDER_KEYS.has(event.key)) {
+              event.stopPropagation();
+              return;
+            }
+            if (event.key === "Enter" && onDone) {
+              event.preventDefault();
+              onDone();
+              return;
+            }
             if (event.key !== "Escape" || !onEscape) return;
             event.preventDefault();
             event.stopPropagation();

@@ -4,7 +4,7 @@ import CmuxNextSettings
 import Observation
 
 /// The cmux.json keys every agent page shows, followed for ``AgentTabs``: `labs.previewFeatures`,
-/// `agentPane.editedFiles.*`, `agentPane.showContextUsage` and `diff.colors`. Each change reaches every open view; a new view gets the current
+/// `agentPane.editedFiles.*`, `agentPane.showContextUsage` (with the composer's other keys, `labs.reasoningSlider` among them) and `diff.colors`. Each change reaches every open view; a new view gets the current
 /// values (``apply(to:)``).
 final class AgentPanePageSettings {
     private(set) var previewFeatures = false

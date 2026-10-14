@@ -10,20 +10,25 @@ import CmuxNextDesign
 /// `showContextUsage`: the context usage ring beside the model. The ring's right-click hides it,
 /// the composer footer's right-click shows it again. `showDictation`: the dictation mic beside Send
 /// in every composer (a chat's and the New Tab page's); its right-click hides it, Settings shows it
-/// again. A bad value is the default plus a diagnostic.
+/// again. `labs.reasoningSlider` (Settings > Advanced > Labs, off by default) rides along: the
+/// reasoning menu's levels as a stepped slider instead of a list. A bad value is the default plus a
+/// diagnostic.
 public nonisolated struct AgentPaneComposerSetting: Sendable, Hashable {
     public static let showContextUsagePath = ["agentPane", "showContextUsage"]
     public static let showDictationPath = ["agentPane", "showDictation"]
 
     public var showContextUsage = true
     public var showDictation = true
+    public var reasoningSlider = CmuxConfigSnapshot.reasoningSliderDefault
 
     public init() {}
 
     public static let fallback = AgentPaneComposerSetting()
 
-    /// The page's value (the `composer` host event): `{showContextUsage, showDictation}`.
-    public var pageValue: JSONValue { ["showContextUsage": .bool(showContextUsage), "showDictation": .bool(showDictation)] }
+    /// The page's value (the `composer` host event): `{showContextUsage, showDictation, reasoningSlider}`.
+    public var pageValue: JSONValue {
+        ["showContextUsage": .bool(showContextUsage), "showDictation": .bool(showDictation), "reasoningSlider": .bool(reasoningSlider)]
+    }
 
     /// Checked against its schema row, so the parser and the Settings window agree.
     static func parse(_ root: JSONValue, diagnostics: inout [SettingsDiagnostic]) -> AgentPaneComposerSetting {
@@ -36,6 +41,13 @@ public nonisolated struct AgentPaneComposerSetting: Sendable, Hashable {
             }
             if descriptor.path == showContextUsagePath { setting.showContextUsage = flag }
             if descriptor.path == showDictationPath { setting.showDictation = flag }
+        }
+        if let value = root.value(at: CmuxConfigSnapshot.reasoningSliderPath) {
+            if let flag = value.boolValue {
+                setting.reasoningSlider = flag
+            } else {
+                diagnostics.append(SettingsDiagnostic(kind: .invalidValue, path: "labs.reasoningSlider", message: "expected true or false"))
+            }
         }
         return setting
     }

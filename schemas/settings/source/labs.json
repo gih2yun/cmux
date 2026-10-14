@@ -30,6 +30,29 @@
             "beta",
             "prototype"
           ]
+        },
+        {
+          "key": "labs.reasoningSlider",
+          "note": "The agent composer's reasoning menu picks the level with a stepped slider instead of the Low to Max list. Off by default; the list stays the default (Leo 2026-10-14). Moves to a Labs flag once hq#1980's registry lands.",
+          "title": {
+            "key": "settings.labs.reasoningSlider",
+            "text": "Reasoning Slider"
+          },
+          "help": {
+            "key": "settings.labs.reasoningSlider.help",
+            "text": "Pick the agent's reasoning level with a slider instead of a list."
+          },
+          "kind": "toggle",
+          "default": false,
+          "keywords": [
+            "labs",
+            "reasoning",
+            "effort",
+            "thinking",
+            "slider",
+            "composer",
+            "agent"
+          ]
         }
       ]
     }

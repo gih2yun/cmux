@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { Choice } from "./ComposerPickers";
 import { isDefaultChoice } from "./defaultChoice";
+import { EffortTrack } from "./EffortTrack";
 import { useT } from "./i18n";
 import { registerPicker } from "./pickerOpeners";
 import { Menu, MenuButton, MenuGroup, MenuPopup, MenuRadioGroup, MenuRadioItem, MenuSeparator } from "../../ui/Menu";
@@ -21,12 +22,15 @@ export type SpeedSection = {
 /// The chip names the level, plus "Fast" while fast mode is on. The menu is the shared popup
 /// layer's opaque surface (ui/Menu), so nothing shows through it. Picking sends chat.effort
 /// through `onPick` (and the speed section's own `onPick`).
+/// With `slider` (`labs.reasoningSlider`, off by default) the levels are a stepped slider instead of
+/// rows (EffortSlider below); the other sections stay as they are.
 export function EffortPicker({
   label,
   efforts,
   current,
   onPick,
   speed,
+  slider = false,
   chevron,
 }: {
   /// The stable name automation opens it by (`openPicker`), whatever the UI language.
@@ -35,6 +39,8 @@ export function EffortPicker({
   current?: string;
   onPick(value: string): void;
   speed?: SpeedSection;
+  /// The levels as a slider (`labs.reasoningSlider`) instead of a list.
+  slider?: boolean;
   chevron?: React.ReactNode;
 }) {
   const t = useT();
@@ -56,6 +62,7 @@ export function EffortPicker({
     const frame = requestAnimationFrame(() => {
       const reasoningGroup = document.querySelector<HTMLElement>('.acpmux-effort-menu [role="group"]');
       const selectedReasoning =
+        document.querySelector<HTMLElement>(".acpmux-effort-menu .acpmux-effort-range") ??
         reasoningGroup?.querySelector<HTMLElement>('[role="menuitemradio"][aria-checked="true"]') ??
         reasoningGroup?.querySelector<HTMLElement>('[role="menuitemradio"]');
       selectedReasoning?.focus({ preventScroll: true });
@@ -83,7 +90,15 @@ export function EffortPicker({
           {chevron}
         </MenuButton>
         <MenuPopup side="top" align="start" className="acpmux-effort-menu">
-          {visibleEfforts.length > 0 && (
+          {slider && visibleEfforts.length > 0 && (
+            <EffortSlider
+              efforts={visibleEfforts}
+              current={selectedVisible?.id}
+              onPick={onPick}
+              onDone={() => setOpen(false)}
+            />
+          )}
+          {!slider && visibleEfforts.length > 0 && (
             <MenuGroup label={t("picker.reasoning")}>
               <MenuRadioGroup
                 value={selectedVisible?.id ?? ""}
@@ -115,5 +130,50 @@ export function EffortPicker({
         </MenuPopup>
       </Menu>
     </span>
+  );
+}
+
+/// The reasoning menu's levels as a slider (`labs.reasoningSlider`): the section's title and the
+/// level it sits on, over EffortTrack's stops, one per level the agent offers. A step picks its
+/// level at once, as a row does, and keeps the menu open for the next; Return or Escape closes it.
+/// The thumb moves before the agent answers, so held keys walk the levels without waiting.
+function EffortSlider({
+  efforts,
+  current,
+  onPick,
+  onDone,
+}: {
+  efforts: Choice[];
+  current?: string;
+  onPick(value: string): void;
+  onDone(): void;
+}) {
+  const t = useT();
+  const [picked, setPicked] = useState<string>();
+  // Once the agent reports the picked level, its own value leads again. An answer to an earlier
+  // step (keys pressed faster than it answers) leaves the thumb where the keys put it.
+  useEffect(() => {
+    if (current === picked) setPicked(undefined);
+  }, [current, picked]);
+  // An unresolved level (the agent's own) sits where the model recommends, else at the start.
+  const shown = picked ?? current ?? efforts.find((choice) => choice.recommended)?.id;
+  const name = efforts.find((choice) => choice.id === shown)?.name;
+  return (
+    <div className="acpmux-effort-slider">
+      <div className="acpmux-effort-slider-head">
+        <span>{t("picker.reasoning")}</span>
+        {name && <span className="acpmux-effort-slider-value">{name}</span>}
+      </div>
+      <EffortTrack
+        efforts={efforts}
+        current={shown}
+        inMenu
+        onDone={onDone}
+        onPick={(value) => {
+          setPicked(value);
+          onPick(value);
+        }}
+      />
+    </div>
   );
 }

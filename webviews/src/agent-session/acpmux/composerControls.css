@@ -11,6 +11,44 @@
   box-shadow: var(--acpmux-popup-elevation);
   color: var(--agent-text);
 }
+/* The levels as a slider (labs.reasoningSlider, EffortPicker.tsx): the section's title with the
+   level it sits on, then the model picker's stepped track drawn at menu size. */
+.acpmux-effort-slider {
+  box-sizing: border-box;
+  width: 208px;
+  max-width: 100%;
+  padding: 0 8px 6px;
+}
+.acpmux-effort-slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0 8px;
+  color: var(--ui-fg-2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+.acpmux-effort-slider-value {
+  color: var(--agent-text);
+  font-size: var(--text-control);
+  font-weight: 500;
+}
+.acpmux-effort-slider .acpmux-effort-track {
+  --acpmux-effort-inset: 8px;
+  height: 16px;
+  margin-top: 0;
+  border-radius: 8px;
+}
+.acpmux-effort-slider .acpmux-effort-fill {
+  border-radius: 8px;
+}
+.acpmux-effort-slider .acpmux-effort-thumb {
+  top: -1px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+}
 .ui-menu-item.acpmux-effort-item {
   display: flex;
   align-items: center;

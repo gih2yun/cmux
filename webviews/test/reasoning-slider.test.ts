@@ -199,9 +199,13 @@ await requireBrowserLane("reasoning-slider.test.ts", async () => {
     expect(await slider.getAttribute("aria-valuetext")).toBe("High");
     expect(await page.locator(`${MENU} .acpmux-effort-slider-value`).textContent()).toBe("High");
     // The menu opens with the slider focused, so the keys reach it at once.
-    await page.waitForFunction(() => document.activeElement?.matches(".acpmux-effort-menu input[type=range]"), undefined, {
-      timeout: 5_000,
-    });
+    await page.waitForFunction(
+      () => document.activeElement?.matches(".acpmux-effort-menu input[type=range]"),
+      undefined,
+      {
+        timeout: 5_000,
+      },
+    );
     const valuetext = () => slider.getAttribute("aria-valuetext");
     const settle = async (name: string, value: string) => {
       await page.waitForFunction(

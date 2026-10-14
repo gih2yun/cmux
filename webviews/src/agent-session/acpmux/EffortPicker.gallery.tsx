@@ -9,7 +9,16 @@ const efforts = [
   { id: "high", name: "High" },
 ];
 
-type Props = Record<string, never>;
+/// Claude Code's full ladder, for the slider (labs.reasoningSlider).
+const ladder = [
+  { id: "low", name: "Low" },
+  { id: "medium", name: "Medium" },
+  { id: "high", name: "High", recommended: true },
+  { id: "xhigh", name: "Extra High" },
+  { id: "max", name: "Max" },
+];
+
+type Props = { slider?: boolean };
 
 const keyboard: Play = async (ctx) => {
   await ctx.click({ role: "button", name: "Effort" });
@@ -37,6 +46,19 @@ const keyboard: Play = async (ctx) => {
   });
 };
 
+const sliderKeys: Play = async (ctx) => {
+  await ctx.click({ role: "button", name: "Effort" });
+  await ctx.waitFor(() => ctx.document.activeElement?.matches(".acpmux-effort-range") ?? false);
+  await ctx.press("ArrowRight");
+  await ctx.waitFor(() => ctx.document.querySelector(".acpmux-effort-slider-value")?.textContent === "Extra High");
+  await ctx.press("End");
+  await ctx.waitFor(() => ctx.document.querySelector(".acpmux-effort-slider-value")?.textContent === "Max");
+  await ctx.press("Enter");
+  await ctx.waitFor(
+    () => ctx.document.querySelector(".acpmux-effort .acpmux-picker-button > span")?.textContent === "Max",
+  );
+};
+
 export default componentEntry<Props>({
   id: "agent-pane.effort-picker",
   title: "Effort picker",
@@ -61,9 +83,17 @@ export default componentEntry<Props>({
   },
   load: async () => {
     const { EffortPicker } = await import("./EffortPicker");
-    return function GalleryEffortPicker() {
-      const [current, setCurrent] = useState("medium");
-      return <EffortPicker label="effort" efforts={efforts} current={current} onPick={setCurrent} />;
+    return function GalleryEffortPicker({ slider = false }: Props) {
+      const [current, setCurrent] = useState(slider ? "high" : "medium");
+      return (
+        <EffortPicker
+          label="effort"
+          efforts={slider ? ladder : efforts}
+          current={current}
+          onPick={setCurrent}
+          slider={slider}
+        />
+      );
     };
   },
   styles: () => Promise.all([import("./styles.css"), import("./composerControls.css")]),
@@ -73,6 +103,11 @@ export default componentEntry<Props>({
       note: "Opening focuses the selected effort row, ArrowDown changes the level, and Escape returns focus to Effort.",
       props: {},
       play: keyboard,
+    },
+    slider: {
+      note: "labs.reasoningSlider on: the levels are a stepped slider; arrows and Home/End pick, Return closes.",
+      props: { slider: true },
+      play: sliderKeys,
     },
   },
 });

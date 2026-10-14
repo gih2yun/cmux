@@ -159,7 +159,8 @@ export function ComposerPickers({
 }: Props) {
   const t = useT();
   // Context usage rides on the model chip's tooltip, unless the person hid it (composerSettings.ts).
-  const { showContextUsage } = useComposerSettings();
+  // The reasoning menu's levels as a slider is opt-in (`labs.reasoningSlider`).
+  const { showContextUsage, reasoningSlider } = useComposerSettings();
   const summary = snapshot.summary;
   // The rail lists the harnesses set up here (Leo 2026-10-11): one whose launcher check failed (not
   // installed, not signed in) stays behind the rail's +, unless this chat runs it. A failed model
@@ -505,6 +506,7 @@ export function ComposerPickers({
               ? speedSection(/codex/i.test(summary?.harness ?? ""), fastMode, fastOn, t)
               : undefined
           }
+          slider={reasoningSlider}
           chevron={<ChevronIcon />}
           onPick={(value) => {
             pending.current = undefined;
