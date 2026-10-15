@@ -363,7 +363,7 @@ async fn an_agent_on_another_claude_home_names_both_homes() {
 /// fetch never runs the shell; an edited rc file runs it again.
 #[tokio::test]
 async fn the_login_shell_is_cached_without_secrets_and_rerun_on_change() {
-    let count = "echo run >> \"$HOME/shell-runs\"\n";
+    let count = "echo \"run pid=$$ ppid=$PPID t=$(date +%s) parent=$(ps -o comm= -p $PPID | tr -d '\\n')\" >> \"$HOME/shell-runs\"\n";
     let dir = scratch(
         "cache",
         &format!(
@@ -372,13 +372,35 @@ async fn the_login_shell_is_cached_without_secrets_and_rerun_on_change() {
     );
     let runs =
         || std::fs::read_to_string(dir.join("home/shell-runs")).unwrap_or_default().lines().count();
+    let pids = std::sync::Mutex::new(Vec::<u32>::new());
+    let diag = |want: usize| {
+        let got = runs();
+        if got != want {
+            let ps = std::process::Command::new("/bin/ps")
+                .args(["-axo", "pid,ppid,lstart,command"])
+                .output()
+                .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+                .unwrap_or_default();
+            let ps: Vec<&str> =
+                ps.lines().filter(|l| l.contains("acpmux") || l.contains("loginsh") || l.contains("fake_claude")).collect();
+            panic!(
+                "DIAG runs={got} want={want}\nDAEMON PIDS {:?}\nSHELL RUNS:\n{}\nPS:\n{}\nDAEMON OUT:\n{}\nDAEMON STDERR:\n{}",
+                pids.lock().unwrap(),
+                std::fs::read_to_string(dir.join("home/shell-runs")).unwrap_or_default(),
+                ps.join("\n"),
+                std::fs::read_to_string(dir.join("daemon.out")).unwrap_or_default(),
+                std::fs::read_to_string(dir.join("daemon.stderr")).unwrap_or_default(),
+            );
+        }
+    };
     let harnesses = json!({"claude": claude(json!({}))});
     {
         let d = start(&dir, harnesses.clone(), &[]).await;
+        pids.lock().unwrap().push(d.child.id());
         let (reply, _) = ask(&d, "claude").await;
         assert_eq!(found(&reply)["auth"], json!(["ANTHROPIC_AUTH_TOKEN"]));
     }
-    assert_eq!(runs(), 1);
+    diag(1);
     let cache = dir.join("login-env.json");
     let text = std::fs::read_to_string(&cache).unwrap();
     assert!(!text.contains("s3cret-value"), "a secret value in the cache: {text}");
@@ -393,24 +415,27 @@ async fn the_login_shell_is_cached_without_secrets_and_rerun_on_change() {
     std::fs::write(dir.join("home/.zshrc"), &rc).unwrap();
     {
         let d = start(&dir, harnesses.clone(), &[]).await;
+        pids.lock().unwrap().push(d.child.id());
         let (reply, _) = ask(&d, "claude").await;
         assert!(reply.is_err(), "no token is left: {reply:?}");
     }
-    assert_eq!(runs(), 2);
+    diag(2);
     // Same files, no secret in the cache: no shell at all.
     {
         let d = start(&dir, harnesses.clone(), &[]).await;
+        pids.lock().unwrap().push(d.child.id());
         let (reply, _) = ask(&d, "claude").await;
         assert!(reply.is_err(), "no token is left: {reply:?}");
     }
-    assert_eq!(runs(), 2, "a matching cache with no secret runs no shell");
+    diag(2);
     // Only the fingerprint can see this edit (the cache needs no secret).
     std::fs::write(dir.join("home/.zshrc"), format!("{rc}# edited\n")).unwrap();
     {
         let d = start(&dir, harnesses.clone(), &[]).await;
+        pids.lock().unwrap().push(d.child.id());
         let _ = ask(&d, "claude").await;
     }
-    assert_eq!(runs(), 3, "an edited rc file runs the shell again");
+    diag(3);
 }
 
 /// A login shell that hangs: the daemon stops waiting after 3 s, and
