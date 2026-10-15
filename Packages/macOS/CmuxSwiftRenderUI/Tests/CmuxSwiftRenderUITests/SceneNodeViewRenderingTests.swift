@@ -172,7 +172,7 @@ struct SceneNodeViewRenderingTests {
 
         #expect(runtime.store.node(rowId)?.bool("tappable") == true)
         let clickPoint = host.convert(
-            NSPoint(x: host.bounds.midX, y: 14),
+            NSPoint(x: 20, y: 14),
             to: nil
         )
         await postLeftClick(at: clickPoint, in: window)
